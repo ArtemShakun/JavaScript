@@ -1,15 +1,15 @@
+import 'babel-polyfill';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { addTileLayer, valideIP } from "./helpers";
+import { addOffset, addTileLayer, getAddress, valideIP } from "./helpers";
 import icon from '../images/icon-location.svg'
 
 const btn = document.querySelector('.search-bar__btn');
 const ipInput = document.querySelector('.search-bar__input');
-
 const ipInfo = document.querySelector('.js-ip');
 const locationInfo = document.querySelector('.js-location');
 const timezoneinfo = document.querySelector('.js-timezone');
-const ispInfo = document.querySelector('.js-isp')
+const ispInfo = document.querySelector('.js-isp');
 
 btn.addEventListener('click', getData);
 ipInput.addEventListener('keydown', handleKey);
@@ -26,15 +26,12 @@ const markerIcon = L.icon({
     iconSize: [20, 30]
 });
 
-L.marker([51.505, -0.09], {icon: markerIcon}).addTo(map);
 addTileLayer(map);
 
 function getData() {
     if (valideIP(ipInput.value)) {
-        const  url = `https://geo.ipify.org/api/v2/country?apiKey=at_Umvcq7wErxarKGCNsAHGqgWKHrSTo&ipAddress=${ipInput.value}`;
-        fetch(url)
-        .then(response => response.json())
-        .then(setInfo)
+        getAddress(ipInput.value)
+            .then(setInfo)
     };
 }
 
@@ -45,8 +42,19 @@ function handleKey(e) {
 }
 
 function setInfo(mapData) {
+    const {lat, lng, country, region, timezone} = mapData.location;
     ipInfo.innerText = mapData.ip;
-    locationInfo.innerText = mapData.location.region + ' ' + mapData.location.country;
-    timezoneinfo.innerText = mapData.location.timezone;
+    locationInfo.innerText = region + ' ' + country;
+    timezoneinfo.innerText = timezone;
     ispInfo.innerText = mapData.isp;
+    map.setView([lat, lng]);
+    L.marker([lat, lng], {icon: markerIcon}).addTo(map);
+
+    if (matchMedia("(max-width: 1023px)").matches) {
+        addOffset(map);
+    };
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    getAddress('102.22.22.1').then(setInfo);
+})
