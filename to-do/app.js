@@ -9,6 +9,41 @@ const form = document.querySelector('form');
 document.addEventListener('DOMContentLoaded', initApp);
 form.addEventListener('submit', handleSubmit);
 
+// Basic logic
+function getUserName(userId) {
+    const user = users.find(u => u.id === userId);
+    return user.name;
+}
+
+function printToDo({id, userId, title, completed}) {
+    const li = document.createElement('li');
+    li.className = 'todo-item';
+    li.dataset.id = id;
+    li.innerHTML = `<span>${title} <i>by </i> <b>${getUserName(userId)}</b></span>`;
+
+    const status = document.createElement('input');
+    status.type = 'checkbox';
+    status.checked = completed;
+    status.addEventListener('change', handleToChange);
+
+    const close = document.createElement('span');
+    close.innerHTML = '&times;';
+    close.className = 'close';
+
+    li.append(close);
+    li.prepend(status);
+
+    toDoList.prepend(li);
+}
+
+function createUserOption(user) {
+    const option = document.createElement('option');
+    option.value = user.id;
+    option.innerText = user.name;
+
+    userSelect.append(option);
+}
+
 // Event logic
 function initApp() {
     Promise.all([getAllToDos(), getAllUsers()]).then(values => {
@@ -28,38 +63,10 @@ function handleSubmit(e) {
     });
 }
 
-// Basic logic
-function getUserName(userId) {
-    const user = users.find(u => u.id === userId);
-    return user.name;
-}
-
-function printToDo({id, userId, title, completed}) {
-    const li = document.createElement('li');
-    li.className = 'todo-item';
-    li.dataset = id;
-    li.innerHTML = `<span>${title} <i>by </i> <b>${getUserName(userId)}</b></span>`;
-
-    const status = document.createElement('input');
-    status.type = 'checkbox';
-    status.checked = completed;
-
-    const close = document.createElement('span');
-    close.innerHTML = '&times;';
-    close.className = 'close';
-
-    li.append(close);
-    li.prepend(status);
-
-    toDoList.prepend(li);
-}
-
-function createUserOption(user) {
-    const option = document.createElement('option');
-    option.value = user.id;
-    option.innerText = user.name;
-
-    userSelect.append(option);
+function handleToChange() {
+    const dataId = this.parentElement.dataset.id;
+    const completed = this.checked;
+    toggleToDoComplete(dataId, completed);
 }
 
 // Async logic
@@ -85,4 +92,18 @@ async function createToDo(todo) {
     });
     const newTodo = await response.json();
     printToDo(newTodo)
+}
+
+async function toggleToDoComplete(todoId, completed) {
+    const response = await fetch(`https://jsonplaceholder.typicode.com/todos/${todoId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({completed}),
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    })
+    const data = await response.json();
+    if (!response.ok) {
+        // Error
+    }
 }
